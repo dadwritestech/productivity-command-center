@@ -4,37 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Productivity Command Center</title>
-    <style>
-      body {
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-      }
-      .dark { color-scheme: dark; }
-      @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
-      nav::-webkit-scrollbar { height: 4px; }
-      nav::-webkit-scrollbar-track { background: transparent; }
-      nav::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
-      .dark nav::-webkit-scrollbar-thumb { background: #444; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "react": "https://esm.sh/react@^19.1.0",
     "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.525.0",
-    "recharts": "https://esm.sh/recharts@^3.0.2"
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0"
   }
 }
 </script>
 <link rel="stylesheet" href="/index.css">
-    <!-- Example favicon link (ensure the file exists in your project root or public folder): -->
-    <!-- <link rel="icon" type="image/x-icon" href="/favicon.ico"> -->
-    <!-- <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"> -->
 </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="text/babel" data-presets="react,typescript" data-type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
 </body>
 </html>

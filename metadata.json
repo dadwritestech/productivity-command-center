@@ -1,5 +1,6 @@
 {
   "name": "Productivity Command Center",
-  "description": "A comprehensive dashboard to manage tasks, goals, habits, and focus time. Track your progress with insightful stats and unlock achievements on your journey to peak productivity.",
-  "requestFramePermissions": []
+  "description": "A comprehensive dashboard to manage tasks, goals, habits, and track productivity with a focus timer and achievement system. An AI-powered assistant provides smart suggestions to help you stay on track.",
+  "requestFramePermissions": [],
+  "prompt": ""
 }

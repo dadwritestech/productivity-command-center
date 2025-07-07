@@ -3,24 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://dadwritestech.github.io/productivity-command-center/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "lucide-react": "^0.525.0",
-    "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "recharts": "^3.0.2"
+    "react": "^19.1.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.11",
     "@types/node": "^22.14.0",
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.11",
     "typescript": "~5.7.2",
     "vite": "^6.2.0"
   }
