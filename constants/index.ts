@@ -1,5 +1,5 @@
 
-import { MotivationalQuote, AchievementDefinition } from '../types';
+import { MotivationalQuote, AchievementDefinition } from '../types/index.ts';
 
 export const MOTIVATIONAL_QUOTES: MotivationalQuote[] = [
   { text: "AI is a tool that amplifies human creativity and expertise.", author: "Tech Wisdom" },

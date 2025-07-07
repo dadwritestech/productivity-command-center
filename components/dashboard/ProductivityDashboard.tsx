@@ -1,17 +1,42 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import { 
   Plus, Clock, Target, CheckCircle, Circle, Play, Pause, RotateCcw, Calendar, 
   BookOpen, Zap, Brain, Timer, Edit2, Trash2, Moon, Sun, Download, Upload, 
   BarChart3, Award, Star, Trophy, Medal, TrendingUp, X,
-  PieChart, Sparkles, Heart, Repeat
-} from '../icons';
+  PieChart, Sparkles, Heart, Repeat, Bot
+} from '../icons.tsx';
 import { 
   Task, Goal, Habit, QuickNote, TimerSession, Settings as SettingsType, MotivationalQuote, Achievement, AchievementDefinition,
   Priority, EnergyLevel, TimerMode, ActiveTabKey
-} from '../../types';
-import { MOTIVATIONAL_QUOTES, ACHIEVEMENT_DEFINITIONS } from '../../constants';
-import { Search } from '../icons';
+} from '../../types/index.ts';
+import { MOTIVATIONAL_QUOTES, ACHIEVEMENT_DEFINITIONS } from '../../constants/index.ts';
+import { Search } from '../icons.tsx';
+
+// Helper component to safely render AI-generated markdown content
+const AIPlanDisplay = ({ plan }: { plan: string }) => {
+  return (
+    <div className="prose prose-sm dark:prose-invert max-w-none">
+      {plan.split('\n').map((line, index) => {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('### ')) {
+          return <h3 key={index} className="!text-base !font-semibold !mt-4 !mb-1">{trimmedLine.substring(4)}</h3>;
+        }
+        if (trimmedLine.startsWith('## ')) {
+          return <h2 key={index} className="!text-lg !font-bold !mt-6 !mb-2">{trimmedLine.substring(3)}</h2>;
+        }
+        if (trimmedLine.startsWith('* ')) {
+          return <div key={index} className="flex items-start"><span className="mr-2 mt-1.5">∙</span><p className="!my-0">{trimmedLine.substring(2)}</p></div>;
+        }
+        if (trimmedLine === '') {
+          return null;
+        }
+        return <p key={index} className="!my-1">{trimmedLine}</p>;
+      })}
+    </div>
+  );
+};
 
 export const ProductivityDashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -71,6 +96,11 @@ export const ProductivityDashboard = () => {
     preferredWorkLength: 25,
     preferredBreakLength: 5
   });
+  
+  // AI Planner State
+  const [aiPlan, setAiPlan] = useState<string>('');
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState<boolean>(false);
+  const [aiError, setAiError] = useState<string>('');
   
   // Productivity stats
   const [productivityScore, setProductivityScore] = useState(0);
@@ -230,6 +260,46 @@ export const ProductivityDashboard = () => {
       return uncompleted.filter(t => t.priority === Priority.Low || t.timeEstimate < 30).slice(0, 3);
     }
   }, [tasks, energyLevel]);
+  
+  const generateDailyPlan = useCallback(async () => {
+    setIsGeneratingPlan(true);
+    setAiError('');
+    setAiPlan('');
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const todayTasks = tasks.filter(task => task.date === new Date().toISOString().split('T')[0] && !task.completed);
+      const todayHabits = habits.filter(habit => habit.date === new Date().toISOString().split('T')[0] && !habit.completed);
+
+      const prompt = `
+        You are a world-class productivity coach for a technical writer in Germany who is adapting their skills for the AI era.
+        Based on the user's current state, create a motivational and actionable daily plan.
+        The plan should be concise, use markdown for formatting (e.g., ## Title, ### Subtitle, * list item), and be structured into Morning, Afternoon, and Evening sections.
+        Prioritize tasks based on the user's energy level and task priority. Be encouraging and acknowledge their specific career context.
+
+        User's stated energy level: ${energyLevel}
+        High-priority tasks for today: ${JSON.stringify(todayTasks.filter(t => t.priority === 'high').map(t => t.text))}
+        Other tasks for today: ${JSON.stringify(todayTasks.filter(t => t.priority !== 'high').map(t => t.text))}
+        Goals to work towards: ${JSON.stringify(goals.map(g => g.title))}
+        Habits to complete today: ${JSON.stringify(todayHabits.map(h => h.name))}
+
+        Generate the plan now.
+      `;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-preview-04-17',
+        contents: prompt,
+      });
+      
+      setAiPlan(response.text);
+
+    } catch (error) {
+      console.error("Error generating AI plan:", error);
+      setAiError("Sorry, I couldn't generate a plan right now. Please try again later.");
+    } finally {
+      setIsGeneratingPlan(false);
+    }
+  }, [tasks, goals, habits, energyLevel]);
   
   const addTask = () => {
     if (newTask.trim()) {
@@ -678,6 +748,33 @@ export const ProductivityDashboard = () => {
         <main>
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
+              {/* AI Daily Planner */}
+              <div className={`${cardClasses} rounded-lg shadow-lg p-6`}>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold flex items-center"><Bot className="w-5 h-5 mr-2 text-purple-500" /> AI Daily Planner</h3>
+                  <button 
+                    onClick={generateDailyPlan} 
+                    disabled={isGeneratingPlan} 
+                    className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 flex items-center justify-center transition-colors disabled:bg-purple-400 dark:disabled:bg-purple-800 disabled:cursor-not-allowed"
+                  >
+                    {isGeneratingPlan ? (
+                      <><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating...</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4 mr-2" />Generate Plan</>
+                    )}
+                  </button>
+                </div>
+                {aiError && <div className="text-red-500 bg-red-100 dark:text-red-300 dark:bg-red-900/20 p-3 rounded-md">{aiError}</div>}
+                
+                <div className="mt-4">
+                  {aiPlan ? (
+                    <AIPlanDisplay plan={aiPlan} />
+                  ) : (
+                    !isGeneratingPlan && <div className={`${textClasses} text-sm text-center py-4`}>Click "Generate Plan" to get a personalized, AI-powered schedule for your day based on your tasks and energy level.</div>
+                  )}
+                </div>
+              </div>
+            
               <div className={`${cardClasses} rounded-lg shadow-lg p-6`}>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold flex items-center"><Sparkles className="w-5 h-5 mr-2 text-yellow-500" />Smart Task Suggestions</h3>

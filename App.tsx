@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ProductivityDashboard } from './components/dashboard/ProductivityDashboard';
+import { ProductivityDashboard } from './components/dashboard/ProductivityDashboard.tsx';
 
 const App: React.FC = () => {
   return (
