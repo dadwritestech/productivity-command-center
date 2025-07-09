@@ -12,7 +12,22 @@ import {
   Task, Goal, Habit, QuickNote, TimerSession, Settings as SettingsType, MotivationalQuote, Achievement, AchievementDefinition,
   Priority, EnergyLevel, TimerMode, ActiveTabKey
 } from '../../types/index.ts';
-import { MOTIVATIONAL_QUOTES, ACHIEVEMENT_DEFINITIONS } from '../../constants/index.ts';
+import {
+  MOTIVATIONAL_QUOTES,
+  ACHIEVEMENT_DEFINITIONS,
+  LOCAL_STORAGE_TASKS_KEY,
+  LOCAL_STORAGE_GOALS_KEY,
+  LOCAL_STORAGE_HABITS_KEY,
+  LOCAL_STORAGE_QUICK_NOTES_KEY,
+  LOCAL_STORAGE_TIMER_SESSIONS_KEY,
+  LOCAL_STORAGE_ACHIEVEMENTS_KEY,
+  LOCAL_STORAGE_SETTINGS_KEY,
+  LOCAL_STORAGE_HAS_VISITED_KEY,
+  LOCAL_STORAGE_DARK_MODE_KEY,
+  LOCAL_STORAGE_TOUR_STEP_KEY,
+  LOCAL_STORAGE_ACTIVE_TAB_KEY,
+  LOCAL_STORAGE_ENERGY_LEVEL_KEY
+} from '../../constants/index.ts';
 import { Search } from '../icons.tsx';
 import { TOUR_STEPS } from './GuidedTour'; // Import TOUR_STEPS for initial call
 
@@ -40,42 +55,56 @@ const AIPlanDisplay = ({ plan }: { plan: string }) => {
   );
 };
 
+// Helper to load from localStorage
+const loadFromLocalStorage = <T>(key: string, defaultValue: T): T => {
+  const storedValue = localStorage.getItem(key);
+  if (storedValue) {
+    try {
+      return JSON.parse(storedValue) as T;
+    } catch (error) {
+      console.error(`Error parsing localStorage key "${key}":`, error);
+      return defaultValue;
+    }
+  }
+  return defaultValue;
+};
+
 export const ProductivityDashboard = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [activeTab, setActiveTab] = useState<ActiveTabKey>(ActiveTabKey.Dashboard);
-  const [darkMode, setDarkMode] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTabKey>(() => loadFromLocalStorage<ActiveTabKey>(LOCAL_STORAGE_ACTIVE_TAB_KEY, ActiveTabKey.Dashboard));
+  const [darkMode, setDarkMode] = useState<boolean>(() => loadFromLocalStorage<boolean>(LOCAL_STORAGE_DARK_MODE_KEY, false));
   const [showAnalytics, setShowAnalytics] = useState(false);
-  const [isFirstVisit, setIsFirstVisit] = useState(false);
-  const [showTour, setShowTour] = useState(false);
-  const [tourStep, setTourStep] = useState(0);
+  // isFirstVisit will be determined by LOCAL_STORAGE_HAS_VISITED_KEY directly in useEffect
+  const [showTour, setShowTour] = useState(false); // Show tour will be set based on isFirstVisit
+  const [tourStep, setTourStep] = useState<number>(() => loadFromLocalStorage<number>(LOCAL_STORAGE_TOUR_STEP_KEY, 0));
   const [highlightedElementId, setHighlightedElementId] = useState<string | null>(null);
   
   // Tasks state
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => loadFromLocalStorage<Task[]>(LOCAL_STORAGE_TASKS_KEY, []));
   
   // Goals state
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const [goals, setGoals] = useState<Goal[]>(() => loadFromLocalStorage<Goal[]>(LOCAL_STORAGE_GOALS_KEY, []));
   
   // Habits state
-  const [habits, setHabits] = useState<Habit[]>([]);
+  const [habits, setHabits] = useState<Habit[]>(() => loadFromLocalStorage<Habit[]>(LOCAL_STORAGE_HABITS_KEY, []));
   
-  // Timer state
-  const [timerMinutes, setTimerMinutes] = useState(25);
+  // Timer state - timer values themselves are not persisted, but settings related to them are.
+  const [timerMinutes, setTimerMinutes] = useState(25); // This will be reset based on settings
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [timerMode, setTimerMode] = useState<TimerMode>(TimerMode.Work);
-  const [timerSessions, setTimerSessions] = useState<TimerSession[]>([]);
-  const [customTimerLength, setCustomTimerLength] = useState(25);
-  
+  const [timerSessions, setTimerSessions] = useState<TimerSession[]>(() => loadFromLocalStorage<TimerSession[]>(LOCAL_STORAGE_TIMER_SESSIONS_KEY, []));
+  const [customTimerLength, setCustomTimerLength] = useState(25); // This will be reset based on settings
+
   // Achievement state
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [achievements, setAchievements] = useState<Achievement[]>(() => loadFromLocalStorage<Achievement[]>(LOCAL_STORAGE_ACHIEVEMENTS_KEY, []));
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
   
   // Quick notes state
-  const [quickNotes, setQuickNotes] = useState<QuickNote[]>([]);
+  const [quickNotes, setQuickNotes] = useState<QuickNote[]>(() => loadFromLocalStorage<QuickNote[]>(LOCAL_STORAGE_QUICK_NOTES_KEY, []));
   
   // Settings state
-  const [settings, setSettings] = useState<SettingsType>({
+  const [settings, setSettings] = useState<SettingsType>(() => loadFromLocalStorage<SettingsType>(LOCAL_STORAGE_SETTINGS_KEY, {
     notifications: true,
     autoStartBreaks: true,
     soundEnabled: true,
@@ -84,16 +113,16 @@ export const ProductivityDashboard = () => {
     showMotivationalQuotes: true,
     preferredWorkLength: 25,
     preferredBreakLength: 5
-  });
+  }));
   
   // AI Planner State
-  const [aiPlan, setAiPlan] = useState<string>('');
+  const [aiPlan, setAiPlan] = useState<string>(''); // AI plan is not persisted
   const [isGeneratingPlan, setIsGeneratingPlan] = useState<boolean>(false);
   const [aiError, setAiError] = useState<string>('');
   
-  // Productivity stats
+  // Productivity stats - These are derived, not stored directly.
   const [productivityScore, setProductivityScore] = useState(0);
-  const [energyLevel, setEnergyLevel] = useState<EnergyLevel>(EnergyLevel.Medium);
+  const [energyLevel, setEnergyLevel] = useState<EnergyLevel>(() => loadFromLocalStorage<EnergyLevel>(LOCAL_STORAGE_ENERGY_LEVEL_KEY, EnergyLevel.Medium));
   const [mostProductiveHours, setMostProductiveHours] = useState<number[]>([]);
   
   // Form inputs
@@ -132,20 +161,53 @@ export const ProductivityDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // First visit detection
+  // First visit detection and tour logic
   useEffect(() => {
-    const visitedBefore = localStorage.getItem('hasVisitedBefore');
+    const visitedBefore = localStorage.getItem(LOCAL_STORAGE_HAS_VISITED_KEY);
     if (!visitedBefore) {
-      setIsFirstVisit(true);
+      // setIsFirstVisit(true); // This state isn't strictly needed if we act directly
       setShowTour(true); // Start the tour on first visit
-      localStorage.setItem('hasVisitedBefore', 'true');
+      localStorage.setItem(LOCAL_STORAGE_HAS_VISITED_KEY, 'true');
       // Trigger initial step change for highlighting and tab setting
       const initialStepData = getTotalTourSteps() > 0 ? TOUR_STEPS[0] : undefined;
       if (initialStepData) {
+        // Ensure tourStep is also reset if we are truly on a "first visit" scenario again (e.g. cleared storage)
+        setTourStep(0);
         handleTourStepChange(0, initialStepData.targetTabKey, initialStepData.highlightElementId);
       }
+    } else {
+      // If visited before, ensure tour isn't showing unless manually triggered (e.g. by restartTour)
+      // This also handles the case where tourStep might have been persisted from a previous unfinished tour
+      // and we don't want it to auto-show.
+      // However, if `showTour` was somehow persisted as true, this would hide it.
+      // Consider if showTour itself should be persisted or always default to false on load.
+      // For now, let's assume tour only shows on first visit or manual restart.
+      setShowTour(false);
     }
-  }, []); // TOUR_STEPS is not a dependency here as it's constant, handleTourStepChange needs to be stable or memoized if it were.
+  }, [handleTourStepChange]); // Added handleTourStepChange as a dependency
+
+  // --- Data Saving useEffect Hooks ---
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_TASKS_KEY, JSON.stringify(tasks)); }, [tasks]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_GOALS_KEY, JSON.stringify(goals)); }, [goals]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_HABITS_KEY, JSON.stringify(habits)); }, [habits]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_QUICK_NOTES_KEY, JSON.stringify(quickNotes)); }, [quickNotes]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_TIMER_SESSIONS_KEY, JSON.stringify(timerSessions)); }, [timerSessions]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_ACHIEVEMENTS_KEY, JSON.stringify(achievements)); }, [achievements]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_SETTINGS_KEY, JSON.stringify(settings)); }, [settings]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_DARK_MODE_KEY, JSON.stringify(darkMode)); }, [darkMode]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_TOUR_STEP_KEY, JSON.stringify(tourStep)); }, [tourStep]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_ACTIVE_TAB_KEY, JSON.stringify(activeTab)); }, [activeTab]);
+  useEffect(() => { localStorage.setItem(LOCAL_STORAGE_ENERGY_LEVEL_KEY, JSON.stringify(energyLevel)); }, [energyLevel]);
+
+  // Initialize timer and custom length from settings on load or when settings change
+  useEffect(() => {
+    setTimerMinutes(settings.preferredWorkLength);
+    setCustomTimerLength(settings.preferredWorkLength);
+    // If timer is not running, also reset seconds to 0
+    if (!isTimerRunning) {
+      setTimerSeconds(0);
+    }
+  }, [settings.preferredWorkLength, settings.preferredBreakLength, isTimerRunning]); // isTimerRunning is included to re-evaluate if mode changed while timer was paused
 
   // Guided tour navigation
   const totalTourSteps = getTotalTourSteps();

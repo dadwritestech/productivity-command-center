@@ -10,6 +10,21 @@ export const MOTIVATIONAL_QUOTES: MotivationalQuote[] = [
   { text: "Every expert was once a beginner.", author: "Learning Path" }
 ];
 
+// Local Storage Keys
+export const LOCAL_STORAGE_TASKS_KEY = 'productivityDashboard_tasks';
+export const LOCAL_STORAGE_GOALS_KEY = 'productivityDashboard_goals';
+export const LOCAL_STORAGE_HABITS_KEY = 'productivityDashboard_habits';
+export const LOCAL_STORAGE_QUICK_NOTES_KEY = 'productivityDashboard_quickNotes';
+export const LOCAL_STORAGE_TIMER_SESSIONS_KEY = 'productivityDashboard_timerSessions';
+export const LOCAL_STORAGE_ACHIEVEMENTS_KEY = 'productivityDashboard_achievements';
+export const LOCAL_STORAGE_SETTINGS_KEY = 'productivityDashboard_settings';
+export const LOCAL_STORAGE_HAS_VISITED_KEY = 'productivityDashboard_hasVisitedBefore';
+export const LOCAL_STORAGE_DARK_MODE_KEY = 'productivityDashboard_darkMode';
+export const LOCAL_STORAGE_TOUR_STEP_KEY = 'productivityDashboard_tourStep';
+export const LOCAL_STORAGE_ACTIVE_TAB_KEY = 'productivityDashboard_activeTab';
+export const LOCAL_STORAGE_ENERGY_LEVEL_KEY = 'productivityDashboard_energyLevel';
+
+
 export const ACHIEVEMENT_DEFINITIONS: AchievementDefinition[] = [
   // Task Achievements
   { id: 'first_task', name: 'Getting Started', description: 'Complete your first task', icon: '🎯', category: 'tasks', condition: (stats) => stats.completedTasks >= 1 },
