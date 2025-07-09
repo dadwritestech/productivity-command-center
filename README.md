@@ -1,6 +1,6 @@
 **Title:** Productivity Command Center | System Documentation  
 **Description:** A complete user guide for the Productivity Command Center application, detailing all modules and system architecture.  
-**Product Version:** 1.0  
+**Product Version:** 1.1
 **Last Updated:** July 9, 2025
 
 # Introduction
@@ -24,9 +24,12 @@ The Command Center operates on a local-first data model. There is no server-side
 
 * **Theme Switcher (Moon/Sun Icon):** Toggles the interface between a standard light theme and a focus-oriented dark theme. The system retains your selection across sessions.
 
+### AI-Powered Assistant
+The Productivity Command Center integrates an AI-powered assistant designed to enhance your productivity. This assistant provides smart suggestions and insights to help you manage your tasks, goals, and habits more effectively. It learns from your usage patterns to offer personalized recommendations and proactively identify potential areas for improvement or focus. The assistant's goal is to act as an intelligent partner, helping you stay on track and make the most of the application's features.
+
 ## System Modules
 
-The application's functionality is partitioned into eight distinct modules, accessible via the main navigation bar.
+The application's functionality is partitioned into eight distinct modules, accessible via the main navigation bar. These modules are further enhanced by the AI-Powered Assistant, which provides contextual suggestions and insights across the platform.
 
 ### Module 1: The Dashboard (Situational Overview)
 
@@ -87,6 +90,10 @@ This module provides a structured progression system designed to incentivize eng
 
 A simple text-editing module for information that does not warrant a formal task entry. It is a digital scratchpad, designed for capturing fleeting ideas, contact information, or other transient data. Standard add, edit, and delete functionality is provided.
 
+## Deployment
+
+The Productivity Command Center is automatically built and deployed to GitHub Pages whenever changes are pushed to the `main` branch. This ensures that the live version of the application is always up-to-date with the latest stable codebase.
+
 ## System Integration
 
 The effectiveness of the Command Center derives from the functional integration of its modules. Actions performed in one module propagate relevant data throughout the system, creating a reinforcing data loop.
@@ -95,4 +102,4 @@ The effectiveness of the Command Center derives from the functional integration 
 * Using the **Focus Timer** populates the **Dashboard**'s history, provides data for the **Stats** module's charts, and advances the **Deep Work** achievement track.
 * Marking a **Habit** as complete builds its streak and progresses the **Habit Hero** achievement track.
 
-This interconnected architecture ensures that every user action is logged, contextualized, and contributes to a holistic view of their productivity.
+This interconnected architecture, supported by the AI-Powered Assistant, ensures that every user action is logged, contextualized, and contributes to a holistic view of their productivity. The assistant leverages these integrations to offer timely and relevant guidance.
