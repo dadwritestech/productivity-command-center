@@ -973,9 +973,10 @@ export const ProductivityDashboard = () => {
             <div className={`${cardClasses} rounded-lg shadow-lg p-6`}>
               <h2 className="text-xl font-semibold mb-6">Goals & Progress</h2>
               <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                   <input type="text" value={newGoal} onChange={(e) => setNewGoal(e.target.value)} placeholder="Enter your goal..." className="md:col-span-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800" onKeyPress={(e) => e.key === 'Enter' && addGoal()} />
                   <input type="text" value={newGoalMilestone} onChange={(e) => setNewGoalMilestone(e.target.value)} placeholder="Milestone" className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800" />
+                  <input type="date" value={newGoalDate} onChange={(e) => setNewGoalDate(e.target.value)} className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800" />
                   <button onClick={addGoal} className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center justify-center transition-colors"><Plus className="w-4 h-4 mr-1" />Add Goal</button>
                 </div>
               </div>
