@@ -7,6 +7,7 @@ import {
   BarChart3, Award, Star, Trophy, Medal, TrendingUp, X,
   PieChart, Sparkles, Heart, Repeat, Bot
 } from '../icons.tsx';
+import { GuidedTour, getTotalTourSteps } from './GuidedTour'; // Import GuidedTour
 import { 
   Task, Goal, Habit, QuickNote, TimerSession, Settings as SettingsType, MotivationalQuote, Achievement, AchievementDefinition,
   Priority, EnergyLevel, TimerMode, ActiveTabKey
@@ -43,28 +44,18 @@ export const ProductivityDashboard = () => {
   const [activeTab, setActiveTab] = useState<ActiveTabKey>(ActiveTabKey.Dashboard);
   const [darkMode, setDarkMode] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [tourStep, setTourStep] = useState(0);
   
   // Tasks state
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 1, text: 'Review AI impact on technical writing industry', priority: Priority.High, completed: false, timeEstimate: 60, category: 'research', date: new Date().toISOString().split('T')[0], project: 'Career Development' },
-    { id: 2, text: 'Update portfolio with recent projects', priority: Priority.Medium, completed: false, timeEstimate: 120, category: 'career', date: new Date().toISOString().split('T')[0], project: 'Portfolio' },
-    { id: 3, text: 'Draft weekly content calendar', priority: Priority.High, completed: false, timeEstimate: 30, category: 'work', date: new Date().toISOString().split('T')[0], project: 'Content Strategy' }
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   
   // Goals state
-  const [goals, setGoals] = useState<Goal[]>([
-    { id: 1, title: 'Adapt skills for AI-augmented writing', progress: 20, target: 100, date: new Date().toISOString().split('T')[0], milestone: 'Learn 3 AI tools' },
-    { id: 2, title: 'Build network in German tech industry', progress: 35, target: 100, date: new Date().toISOString().split('T')[0], milestone: 'Connect with 20 professionals' },
-    { id: 3, title: 'Create 3 months emergency fund', progress: 60, target: 100, date: new Date().toISOString().split('T')[0], milestone: 'Save €5000' }
-  ]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   
   // Habits state
-  const [habits, setHabits] = useState<Habit[]>([
-    { id: 1, name: 'Morning planning (10 min)', completed: false, date: new Date().toISOString().split('T')[0], category: 'productivity', streak: 5, recurring: 'daily' },
-    { id: 2, name: 'Learn new tech writing tool', completed: false, date: new Date().toISOString().split('T')[0], category: 'learning', streak: 3, recurring: 'daily' },
-    { id: 3, name: 'Industry news reading', completed: true, date: new Date().toISOString().split('T')[0], category: 'professional', streak: 12, recurring: 'daily' },
-    { id: 4, name: 'Evening reflection', completed: false, date: new Date().toISOString().split('T')[0], category: 'wellness', streak: 2, recurring: 'daily' }
-  ]);
+  const [habits, setHabits] = useState<Habit[]>([]);
   
   // Timer state
   const [timerMinutes, setTimerMinutes] = useState(25);
@@ -79,11 +70,7 @@ export const ProductivityDashboard = () => {
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
   
   // Quick notes state
-  const [quickNotes, setQuickNotes] = useState<QuickNote[]>([
-    { id: 1, text: 'Research German technical writing certification programs', date: new Date().toISOString().split('T')[0], category: 'career' },
-    { id: 2, text: 'Follow up on freelance client proposal', date: new Date().toISOString().split('T')[0], category: 'work' },
-    { id: 3, text: 'Update LinkedIn with AI collaboration skills', date: new Date().toISOString().split('T')[0], category: 'professional' }
-  ]);
+  const [quickNotes, setQuickNotes] = useState<QuickNote[]>([]);
   
   // Settings state
   const [settings, setSettings] = useState<SettingsType>({
@@ -142,6 +129,25 @@ export const ProductivityDashboard = () => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // First visit detection
+  useEffect(() => {
+    const visitedBefore = localStorage.getItem('hasVisitedBefore');
+    if (!visitedBefore) {
+      setIsFirstVisit(true);
+      setShowTour(true); // Start the tour on first visit
+      localStorage.setItem('hasVisitedBefore', 'true');
+    }
+  }, []);
+
+  // Guided tour navigation
+  const totalTourSteps = getTotalTourSteps();
+  const handleNextStep = () => setTourStep(prev => Math.min(prev + 1, totalTourSteps - 1));
+  const handlePrevStep = () => setTourStep(prev => Math.max(prev - 1, 0));
+  const handleSkipTour = () => {
+    setShowTour(false);
+    setTourStep(0); // Reset for potential future manual trigger
+  };
   
   // Rotate motivational quotes
   useEffect(() => {
@@ -587,9 +593,18 @@ export const ProductivityDashboard = () => {
 
   return (
     <div className={`min-h-screen ${themeClasses} p-4`}>
+      <GuidedTour
+        isOpen={showTour}
+        onClose={handleSkipTour}
+        currentStep={tourStep}
+        onNext={handleNextStep}
+        onPrev={handlePrevStep}
+        onSkip={handleSkipTour}
+        totalSteps={totalTourSteps}
+      />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <header className={`${cardClasses} rounded-lg shadow-lg p-6 mb-6`}>
+        <header id="header-controls" className={`${cardClasses} rounded-lg shadow-lg p-6 mb-6`}>
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -628,16 +643,17 @@ export const ProductivityDashboard = () => {
         <nav className={`${cardClasses} rounded-lg shadow-lg mb-6`}>
           <div className="flex border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
             {[
-              { key: 'dashboard', label: 'Dashboard', icon: Calendar },
-              { key: 'tasks', label: 'Tasks', icon: CheckCircle },
-              { key: 'goals', label: 'Goals', icon: Target },
-              { key: 'habits', label: 'Habits', icon: Zap },
-              { key: 'timer', label: 'Focus Timer', icon: Timer },
-              { key: 'notes', label: 'Quick Notes', icon: Brain },
-              { key: 'achievements', label: 'Achievements', icon: Trophy }
-            ].map(({ key, label, icon: Icon }) => (
+              { key: 'dashboard', label: 'Dashboard', icon: Calendar, id: 'nav-dashboard' },
+              { key: 'tasks', label: 'Tasks', icon: CheckCircle, id: 'nav-tasks' },
+              { key: 'goals', label: 'Goals', icon: Target, id: 'nav-goals' },
+              { key: 'habits', label: 'Habits', icon: Zap, id: 'nav-habits' },
+              { key: 'timer', label: 'Focus Timer', icon: Timer, id: 'nav-timer' },
+              { key: 'notes', label: 'Quick Notes', icon: Brain, id: 'nav-notes' },
+              { key: 'achievements', label: 'Achievements', icon: Trophy, id: 'nav-achievements' }
+            ].map(({ key, label, icon: Icon, id }) => (
               <button
                 key={key}
+                id={id} // Added ID for tour targeting
                 onClick={() => setActiveTab(key as ActiveTabKey)}
                 className={`flex items-center px-6 py-3 font-medium transition-all relative whitespace-nowrap ${
                   activeTab === key
@@ -747,9 +763,9 @@ export const ProductivityDashboard = () => {
 
         <main>
           {activeTab === 'dashboard' && (
-            <div className="space-y-6">
+            <div id="dashboard-main" className="space-y-6"> {/* Added ID for tour targeting */}
               {/* AI Daily Planner */}
-              <div className={`${cardClasses} rounded-lg shadow-lg p-6`}>
+              <div id="dashboard-overview" className={`${cardClasses} rounded-lg shadow-lg p-6`}> {/* Added ID for tour targeting */}
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold flex items-center"><Bot className="w-5 h-5 mr-2 text-purple-500" /> AI Daily Planner</h3>
                   <button 
