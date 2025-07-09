@@ -5,9 +5,9 @@ import {
   Plus, Clock, Target, CheckCircle, Circle, Play, Pause, RotateCcw, Calendar, 
   BookOpen, Zap, Brain, Timer, Edit2, Trash2, Moon, Sun, Download, Upload, 
   BarChart3, Award, Star, Trophy, Medal, TrendingUp, X,
-  PieChart, Sparkles, Heart, Repeat, Bot
+  PieChart, Sparkles, Heart, Repeat, Bot, Info // Added Info icon
 } from '../icons.tsx';
-import { GuidedTour, getTotalTourSteps } from './GuidedTour'; // Import GuidedTour
+import { GuidedTour, getTotalTourSteps, TOUR_STEPS } from './GuidedTour';
 import { 
   Task, Goal, Habit, QuickNote, TimerSession, Settings as SettingsType, MotivationalQuote, Achievement, AchievementDefinition,
   Priority, EnergyLevel, TimerMode, ActiveTabKey
@@ -171,6 +171,18 @@ export const ProductivityDashboard = () => {
       }
     }, 100); // Small delay to allow tab content to render if changed
   }, [setActiveTab, setHighlightedElementId]); // Add dependencies for useCallback
+
+  const restartTour = () => {
+    setTourStep(0);
+    // Use TOUR_STEPS[0] to get initial step data, ensuring TOUR_STEPS is available and not empty
+    if (TOUR_STEPS && TOUR_STEPS.length > 0) {
+      handleTourStepChange(0, TOUR_STEPS[0].targetTabKey, TOUR_STEPS[0].highlightElementId);
+    } else {
+      // Fallback if TOUR_STEPS is not as expected, though it should be defined
+      handleTourStepChange(0, ActiveTabKey.Dashboard, 'dashboard-overview');
+    }
+    setShowTour(true);
+  };
   
   // Effect to apply/remove highlight class
   useEffect(() => {
@@ -678,6 +690,13 @@ export const ProductivityDashboard = () => {
                   <Upload className="w-5 h-5" />
                   <input type="file" accept=".json" onChange={importData} className="hidden" />
                 </label>
+                <button
+                  onClick={restartTour} // Attached restartTour function
+                  className="p-2 rounded-lg bg-yellow-500 text-white hover:bg-yellow-600 transition-colors"
+                  title="Replay Guided Tour"
+                >
+                  <Info className="w-5 h-5" />
+                </button>
               </div>
             </div>
           </div>
