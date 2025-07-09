@@ -14,6 +14,7 @@ import {
 } from '../../types/index.ts';
 import { MOTIVATIONAL_QUOTES, ACHIEVEMENT_DEFINITIONS } from '../../constants/index.ts';
 import { Search } from '../icons.tsx';
+import { TOUR_STEPS } from './GuidedTour'; // Import TOUR_STEPS for initial call
 
 // Helper component to safely render AI-generated markdown content
 const AIPlanDisplay = ({ plan }: { plan: string }) => {
@@ -47,6 +48,7 @@ export const ProductivityDashboard = () => {
   const [isFirstVisit, setIsFirstVisit] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [tourStep, setTourStep] = useState(0);
+  const [highlightedElementId, setHighlightedElementId] = useState<string | null>(null);
   
   // Tasks state
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -137,8 +139,13 @@ export const ProductivityDashboard = () => {
       setIsFirstVisit(true);
       setShowTour(true); // Start the tour on first visit
       localStorage.setItem('hasVisitedBefore', 'true');
+      // Trigger initial step change for highlighting and tab setting
+      const initialStepData = getTotalTourSteps() > 0 ? TOUR_STEPS[0] : undefined;
+      if (initialStepData) {
+        handleTourStepChange(0, initialStepData.targetTabKey, initialStepData.highlightElementId);
+      }
     }
-  }, []);
+  }, []); // TOUR_STEPS is not a dependency here as it's constant, handleTourStepChange needs to be stable or memoized if it were.
 
   // Guided tour navigation
   const totalTourSteps = getTotalTourSteps();
@@ -147,8 +154,44 @@ export const ProductivityDashboard = () => {
   const handleSkipTour = () => {
     setShowTour(false);
     setTourStep(0); // Reset for potential future manual trigger
+    setHighlightedElementId(null); // Clear highlight on skip
   };
+
+  const handleTourStepChange = useCallback((stepIndex: number, targetTabKey?: ActiveTabKey, highlightId?: string) => {
+    if (targetTabKey) {
+      setActiveTab(targetTabKey);
+    }
+    setHighlightedElementId(highlightId || null);
+    // Ensure the element is in view after tab switch & highlight update
+    // This might need a slight delay if tab switching has its own transition
+    setTimeout(() => {
+      if (highlightId) {
+        const element = document.getElementById(highlightId);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100); // Small delay to allow tab content to render if changed
+  }, [setActiveTab, setHighlightedElementId]); // Add dependencies for useCallback
   
+  // Effect to apply/remove highlight class
+  useEffect(() => {
+    let previousHighlightedElement: HTMLElement | null = null;
+
+    if (highlightedElementId) {
+      const element = document.getElementById(highlightedElementId);
+      if (element) {
+        element.classList.add('tour-highlight');
+        // element.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Already handled in handleTourStepChange after tab switch
+        previousHighlightedElement = element;
+      }
+    }
+
+    return () => {
+      if (previousHighlightedElement) {
+        previousHighlightedElement.classList.remove('tour-highlight');
+      }
+    };
+  }, [highlightedElementId]);
+
   // Rotate motivational quotes
   useEffect(() => {
     if (settings.showMotivationalQuotes) {
@@ -601,6 +644,7 @@ export const ProductivityDashboard = () => {
         onPrev={handlePrevStep}
         onSkip={handleSkipTour}
         totalSteps={totalTourSteps}
+        onStepChange={handleTourStepChange} // Pass the new callback
       />
       <div className="max-w-7xl mx-auto">
         {/* Header */}
@@ -763,9 +807,10 @@ export const ProductivityDashboard = () => {
 
         <main>
           {activeTab === 'dashboard' && (
-            <div id="dashboard-main" className="space-y-6"> {/* Added ID for tour targeting */}
+            // This div can serve as 'dashboard-overview' for the general welcome/outro step
+            <div id="dashboard-overview" className="space-y-6">
               {/* AI Daily Planner */}
-              <div id="dashboard-overview" className={`${cardClasses} rounded-lg shadow-lg p-6`}> {/* Added ID for tour targeting */}
+              <div id="ai-planner-section" className={`${cardClasses} rounded-lg shadow-lg p-6`}> {/* This is the section for AI planner */}
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold flex items-center"><Bot className="w-5 h-5 mr-2 text-purple-500" /> AI Daily Planner</h3>
                   <button 
@@ -945,7 +990,7 @@ export const ProductivityDashboard = () => {
                 </div>
               </div>
               
-              <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div id="task-add-form-section" className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"> {/* ID for tour */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
                   <input type="text" value={newTask} onChange={(e) => setNewTask(e.target.value)} placeholder="Add a new task..." className="lg:col-span-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800" onKeyPress={(e) => e.key === 'Enter' && addTask()} />
                   <input type="text" value={newTaskProject} onChange={(e) => setNewTaskProject(e.target.value)} placeholder="Project" className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800" />
@@ -996,7 +1041,7 @@ export const ProductivityDashboard = () => {
                   <button onClick={addGoal} className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center justify-center transition-colors"><Plus className="w-4 h-4 mr-1" />Add Goal</button>
                 </div>
               </div>
-              <div className="space-y-6">
+              <div id="goals-list-section" className="space-y-6"> {/* ID for tour */}
                 {goals.map(goal => (
                   <div key={goal.id} className={`p-4 border ${borderClasses} rounded-lg hover:shadow-md transition-all`}>
                     <div className="flex justify-between items-center mb-3">

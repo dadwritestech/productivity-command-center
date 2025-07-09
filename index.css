@@ -8,3 +8,15 @@ body {
 #root {
   padding: 1rem;
 }
+
+.tour-highlight {
+  outline: 3px solid #3b82f6; /* A nice blue color */
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  border-radius: 6px;
+  transition: outline 0.2s ease-in-out, box-shadow 0.2s ease-in-out, border-radius 0.2s ease-in-out;
+  /* Ensure the highlighted element is brought forward if necessary,
+     though z-index stacking contexts can be tricky.
+     This might need adjustment based on actual layout. */
+  position: relative;
+  z-index: 100; /* Arbitrary high value, adjust if needed */
+}
