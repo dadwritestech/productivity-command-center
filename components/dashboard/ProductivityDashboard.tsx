@@ -7,7 +7,8 @@ import {
   BarChart3, Award, Star, Trophy, Medal, TrendingUp, X,
   PieChart, Sparkles, Heart, Repeat, Bot, Info // Added Info icon
 } from '../icons.tsx';
-import { GuidedTour, getTotalTourSteps, TOUR_STEPS } from './GuidedTour';
+// import { GuidedTour, getTotalTourSteps, TOUR_STEPS } from './GuidedTour'; // Old import
+import { GuidedTour, getTotalTourSteps, getTourStepsData } from './GuidedTour'; // New import
 import { 
   Task, Goal, Habit, QuickNote, TimerSession, Settings as SettingsType, MotivationalQuote, Achievement, AchievementDefinition,
   Priority, EnergyLevel, TimerMode, ActiveTabKey
@@ -29,7 +30,7 @@ import {
   LOCAL_STORAGE_ENERGY_LEVEL_KEY
 } from '../../constants/index.ts';
 import { Search } from '../icons.tsx';
-import { TOUR_STEPS } from './GuidedTour'; // Import TOUR_STEPS for initial call
+// import { TOUR_STEPS } from './GuidedTour'; // This was the duplicate import, ensure it's removed or corrected if it was the primary one. The one above is now primary.
 
 // Helper component to safely render AI-generated markdown content
 const AIPlanDisplay = ({ plan }: { plan: string }) => {
@@ -164,27 +165,24 @@ export const ProductivityDashboard = () => {
   // First visit detection and tour logic
   useEffect(() => {
     const visitedBefore = localStorage.getItem(LOCAL_STORAGE_HAS_VISITED_KEY);
+    const currentTotalSteps = getTotalTourSteps(); // Get total count for the condition
+
     if (!visitedBefore) {
-      // setIsFirstVisit(true); // This state isn't strictly needed if we act directly
       setShowTour(true); // Start the tour on first visit
       localStorage.setItem(LOCAL_STORAGE_HAS_VISITED_KEY, 'true');
-      // Trigger initial step change for highlighting and tab setting
-      const initialStepData = getTotalTourSteps() > 0 ? TOUR_STEPS[0] : undefined;
-      if (initialStepData) {
+
+      if (currentTotalSteps > 0) {
+        const tourStepsArray = getTourStepsData(); // Get the actual array of steps
+        const initialStepData = tourStepsArray[0]; // Should be safe due to currentTotalSteps > 0
         // Ensure tourStep is also reset if we are truly on a "first visit" scenario again (e.g. cleared storage)
         setTourStep(0);
         handleTourStepChange(0, initialStepData.targetTabKey, initialStepData.highlightElementId);
       }
     } else {
       // If visited before, ensure tour isn't showing unless manually triggered (e.g. by restartTour)
-      // This also handles the case where tourStep might have been persisted from a previous unfinished tour
-      // and we don't want it to auto-show.
-      // However, if `showTour` was somehow persisted as true, this would hide it.
-      // Consider if showTour itself should be persisted or always default to false on load.
-      // For now, let's assume tour only shows on first visit or manual restart.
       setShowTour(false);
     }
-  }, [handleTourStepChange]); // Added handleTourStepChange as a dependency
+  }, [handleTourStepChange]); // Added handleTourStepChange as a dependency, it's memoized
 
   // --- Data Saving useEffect Hooks ---
   useEffect(() => { localStorage.setItem(LOCAL_STORAGE_TASKS_KEY, JSON.stringify(tasks)); }, [tasks]);
@@ -210,7 +208,7 @@ export const ProductivityDashboard = () => {
   }, [settings.preferredWorkLength, settings.preferredBreakLength, isTimerRunning]); // isTimerRunning is included to re-evaluate if mode changed while timer was paused
 
   // Guided tour navigation
-  const totalTourSteps = getTotalTourSteps();
+  const totalTourSteps = useMemo(() => getTotalTourSteps(), []); // Memoize totalTourSteps
   const handleNextStep = () => setTourStep(prev => Math.min(prev + 1, totalTourSteps - 1));
   const handlePrevStep = () => setTourStep(prev => Math.max(prev - 1, 0));
   const handleSkipTour = () => {
@@ -236,11 +234,11 @@ export const ProductivityDashboard = () => {
 
   const restartTour = () => {
     setTourStep(0);
-    // Use TOUR_STEPS[0] to get initial step data, ensuring TOUR_STEPS is available and not empty
-    if (TOUR_STEPS && TOUR_STEPS.length > 0) {
-      handleTourStepChange(0, TOUR_STEPS[0].targetTabKey, TOUR_STEPS[0].highlightElementId);
+    const tourStepsArray = getTourStepsData(); // Call the function to get data
+    if (tourStepsArray.length > 0) {
+      handleTourStepChange(0, tourStepsArray[0].targetTabKey, tourStepsArray[0].highlightElementId);
     } else {
-      // Fallback if TOUR_STEPS is not as expected, though it should be defined
+      // Fallback if no tour steps are defined
       handleTourStepChange(0, ActiveTabKey.Dashboard, 'dashboard-overview');
     }
     setShowTour(true);

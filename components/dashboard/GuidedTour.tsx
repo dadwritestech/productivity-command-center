@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from '../icons'; // Assuming you have these icons
-import { ActiveTabKey } from '../../types'; // Assuming ActiveTabKey is exported from types
+import React, { useEffect, useMemo } from 'react';
+import { X, ChevronLeft, ChevronRight } from '../icons';
+import { ActiveTabKey } from '../../types';
 
 interface TourStepData {
   title: string;
@@ -9,43 +9,30 @@ interface TourStepData {
   targetTabKey?: ActiveTabKey;
 }
 
-interface GuidedTourProps {
-  isOpen: boolean;
-  onClose: () => void;
-  currentStep: number;
-  onNext: () => void;
-  onPrev: () => void;
-  onSkip: () => void;
-  totalSteps: number;
-  onStepChange: (stepIndex: number, targetTabKey?: ActiveTabKey, highlightElementId?: string) => void;
-}
-
-// Updated TOUR_STEPS with highlightElementId and targetTabKey
-// Note: Specific IDs like 'dashboard-ai-planner', 'tasks-add-form', 'goals-list', etc.
-// will need to be added to the respective elements in ProductivityDashboard.tsx
-export const TOUR_STEPS: TourStepData[] = [
+// Function to get tour steps data
+export const getTourStepsData = (): TourStepData[] => [
   {
     title: 'Welcome to Your Productivity Command Center!',
     content: "Let's take a quick tour to get you started. This dashboard is designed to help you manage your tasks, goals, habits, and focus, all in one place.",
-    highlightElementId: 'dashboard-overview', // General overview area
+    highlightElementId: 'dashboard-overview',
     targetTabKey: ActiveTabKey.Dashboard,
   },
   {
     title: 'AI Daily Planner',
     content: 'The AI Daily Planner on the dashboard helps you schedule your day. Click "Generate Plan" to get started.',
-    highlightElementId: 'ai-planner-section', // Specific ID for AI planner
+    highlightElementId: 'ai-planner-section',
     targetTabKey: ActiveTabKey.Dashboard,
   },
   {
     title: 'Tasks Tab',
     content: 'Navigate to the Tasks tab to manage all your to-dos. You can add new tasks, set priorities, due dates, and assign them to projects.',
-    highlightElementId: 'nav-tasks', // Highlight the tab itself
+    highlightElementId: 'nav-tasks',
     targetTabKey: ActiveTabKey.Tasks,
   },
   {
     title: 'Adding a Task',
     content: "Once in the Tasks tab, use this form to add new tasks. Don't forget to set a priority and due date!",
-    highlightElementId: 'task-add-form-section', // ID for the task input form area
+    highlightElementId: 'task-add-form-section',
     targetTabKey: ActiveTabKey.Tasks,
   },
   {
@@ -57,7 +44,7 @@ export const TOUR_STEPS: TourStepData[] = [
   {
     title: 'Tracking Goal Progress',
     content: 'Here you can see your goals and update their progress. Use the buttons to adjust completion.',
-    highlightElementId: 'goals-list-section', // ID for the goals list area
+    highlightElementId: 'goals-list-section',
     targetTabKey: ActiveTabKey.Goals,
   },
   {
@@ -87,8 +74,8 @@ export const TOUR_STEPS: TourStepData[] = [
   {
     title: 'Settings & More',
     content: 'Customize your experience by toggling dark mode (Moon/Sun icon). Access Productivity Analytics (Chart icon) and manage your data with Export/Import.',
-    highlightElementId: 'header-controls', // Existing ID for header controls
-    targetTabKey: ActiveTabKey.Dashboard, // Or keep on current tab, this one is general
+    highlightElementId: 'header-controls',
+    targetTabKey: ActiveTabKey.Dashboard,
   },
   {
     title: "You're All Set!",
@@ -98,6 +85,17 @@ export const TOUR_STEPS: TourStepData[] = [
   }
 ];
 
+interface GuidedTourProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentStep: number;
+  onNext: () => void;
+  onPrev: () => void;
+  onSkip: () => void;
+  totalSteps: number; // totalSteps is now a required prop again
+  onStepChange: (stepIndex: number, targetTabKey?: ActiveTabKey, highlightElementId?: string) => void;
+}
+
 export const GuidedTour: React.FC<GuidedTourProps> = ({
   isOpen,
   onClose,
@@ -105,22 +103,24 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
   onNext,
   onPrev,
   onSkip,
-  totalSteps,
+  totalSteps, // Receive totalSteps as a prop
   onStepChange,
 }) => {
-  if (!isOpen) return null;
+  // Get the actual step data by calling the function, memoize it.
+  const tourStepsConfiguration = useMemo(() => getTourStepsData(), []);
 
-  const stepData = TOUR_STEPS[currentStep];
+  if (!isOpen || currentStep >= totalSteps || totalSteps === 0) return null;
 
-  // Effect to call onStepChange when currentStep changes or tour opens
+  const stepData = tourStepsConfiguration[currentStep];
+
   useEffect(() => {
-    if (isOpen) {
-      onStepChange(currentStep, stepData?.targetTabKey, stepData?.highlightElementId);
+    if (isOpen && stepData) {
+      onStepChange(currentStep, stepData.targetTabKey, stepData.highlightElementId);
     }
   }, [currentStep, isOpen, onStepChange, stepData]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 z-[150] flex items-center justify-center p-4 transition-opacity duration-300"> {/* Changed z-50 to z-[150] */}
+    <div className="fixed inset-0 bg-black bg-opacity-75 z-[150] flex items-center justify-center p-4 transition-opacity duration-300">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-300 scale-100">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{stepData.title}</h3>
@@ -174,5 +174,7 @@ export const GuidedTour: React.FC<GuidedTourProps> = ({
   );
 };
 
-// Helper to get total steps, will be used in ProductivityDashboard
-export const getTotalTourSteps = () => TOUR_STEPS.length;
+// Helper to get total steps, used by ProductivityDashboard
+export const getTotalTourSteps = (): number => {
+  return getTourStepsData().length;
+};
