@@ -162,6 +162,22 @@ export const ProductivityDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Moved handleTourStepChange definition before its use in useEffect dependency array
+  const handleTourStepChange = useCallback((stepIndex: number, targetTabKey?: ActiveTabKey, highlightId?: string) => {
+    if (targetTabKey) {
+      setActiveTab(targetTabKey);
+    }
+    setHighlightedElementId(highlightId || null);
+    // Ensure the element is in view after tab switch & highlight update
+    // This might need a slight delay if tab switching has its own transition
+    setTimeout(() => {
+      if (highlightId) {
+        const element = document.getElementById(highlightId);
+        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100); // Small delay to allow tab content to render if changed
+  }, []); // State setters (setActiveTab, setHighlightedElementId) are stable and don't need to be dependencies.
+
   // First visit detection and tour logic
   useEffect(() => {
     const visitedBefore = localStorage.getItem(LOCAL_STORAGE_HAS_VISITED_KEY);
@@ -182,7 +198,7 @@ export const ProductivityDashboard = () => {
       // If visited before, ensure tour isn't showing unless manually triggered (e.g. by restartTour)
       setShowTour(false);
     }
-  }, [handleTourStepChange]); // Added handleTourStepChange as a dependency, it's memoized
+  }, [handleTourStepChange]);
 
   // --- Data Saving useEffect Hooks ---
   useEffect(() => { localStorage.setItem(LOCAL_STORAGE_TASKS_KEY, JSON.stringify(tasks)); }, [tasks]);
@@ -217,20 +233,7 @@ export const ProductivityDashboard = () => {
     setHighlightedElementId(null); // Clear highlight on skip
   };
 
-  const handleTourStepChange = useCallback((stepIndex: number, targetTabKey?: ActiveTabKey, highlightId?: string) => {
-    if (targetTabKey) {
-      setActiveTab(targetTabKey);
-    }
-    setHighlightedElementId(highlightId || null);
-    // Ensure the element is in view after tab switch & highlight update
-    // This might need a slight delay if tab switching has its own transition
-    setTimeout(() => {
-      if (highlightId) {
-        const element = document.getElementById(highlightId);
-        element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 100); // Small delay to allow tab content to render if changed
-  }, [setActiveTab, setHighlightedElementId]); // Add dependencies for useCallback
+  // Original position of handleTourStepChange - removed as it's moved up
 
   const restartTour = () => {
     setTourStep(0);
