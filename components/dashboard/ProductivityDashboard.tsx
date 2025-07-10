@@ -56,7 +56,7 @@ const AIPlanDisplay = ({ plan }: { plan: string }) => {
 };
 
 // Helper to load from localStorage
-const loadFromLocalStorage = <T>(key: string, defaultValue: T): T => {
+const loadFromLocalStorage = <T extends unknown>(key: string, defaultValue: T): T => {
   const storedValue = localStorage.getItem(key);
   if (storedValue) {
     try {
